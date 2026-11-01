@@ -4,7 +4,7 @@ Subject: [PATCH] mac80211: fix MHI debugfs configuration mismatch
 
 --- a/drivers/bus/mhi/host/internal.h
 +++ b/drivers/bus/mhi/host/internal.h
-@@ -296,7 +296,7 @@
+@@ -296,3 +296,3 @@
  
  /* debugfs related functions */
 -#ifdef CONFIG_MHI_BUS_DEBUG
