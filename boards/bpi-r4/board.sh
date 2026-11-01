@@ -8,6 +8,7 @@ WIFI_PATCHES="
 	hostapd/0264-wpa_s-add-btwt-join-command.patch
 	mt76/9999-w-mt7996-per-band-leds.patch
 	mt76/9999-w-mt76-share-tpt-led-trigger.patch
+	mac80211/1000-fix-mhi-debugfs-config.patch
 "
 
 board_tree() {
