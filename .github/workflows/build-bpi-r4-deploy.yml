@@ -75,13 +75,13 @@ jobs:
       - name: Free disk space on runner
         uses: jlumbroso/free-disk-space@main
         with:
-        preinstalled-runtimes: true
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: true
-        docker-images: true
-        swap-storage: false
+          preinstalled-runtimes: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
 
       - name: Install build dependencies
         run: |
