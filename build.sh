@@ -56,7 +56,7 @@ board_packages
 board_after_feeds
 add_after_feeds
 
-\\cp "$REPO/boards/$BOARD/configs/$VARIANT.config" .config
+\cp "$REPO/boards/$BOARD/configs/$VARIANT.config" .config
 make defconfig
 add_config
 board_config
