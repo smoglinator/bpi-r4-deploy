@@ -32,6 +32,13 @@ wired)    PROFILE=filogic ;;
 esac
 
 fetch_sources
+
+# The workflow must change MHI debug configuration only after fetch_sources:
+# that function deletes and reclones openwrt, so doing this in an earlier
+# workflow step has no effect on the source tree used by the build.
+find openwrt/ -type f -name 'config-*' -exec sed -i \
+    's/^CONFIG_MHI_BUS_DEBUG=y$/# CONFIG_MHI_BUS_DEBUG is not set/' {} + || true
+
 add_kernel_patches
 
 cd openwrt
@@ -49,7 +56,7 @@ board_packages
 board_after_feeds
 add_after_feeds
 
-\cp "$REPO/boards/$BOARD/configs/$VARIANT.config" .config
+\\cp "$REPO/boards/$BOARD/configs/$VARIANT.config" .config
 make defconfig
 add_config
 board_config
