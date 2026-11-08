@@ -33,16 +33,15 @@ esac
 
 fetch_sources
 
-# The workflow must change MHI debug configuration only after fetch_sources:
-# that function deletes and reclones openwrt, so doing this in an earlier
-# workflow step has no effect on the source tree used by the build.
-find openwrt/ -type f -name 'config-*' -exec sed -i \
-    's/^CONFIG_MHI_BUS_DEBUG=y$/# CONFIG_MHI_BUS_DEBUG is not set/' {} + || true
-
 add_kernel_patches
 
 cd openwrt
 bash ../mtk-openwrt-feeds/autobuild/unified/autobuild.sh "$PROFILE" prepare
+
+# Apply this after fetching and preparing sources: the earlier workflow step
+# ran before fetch_sources, which deletes and reclones the OpenWrt tree.
+find . -type f -name 'config-*' -exec sed -i \
+    's/^CONFIG_MHI_BUS_DEBUG=y$/# CONFIG_MHI_BUS_DEBUG is not set/' {} + || true
 
 [ "$VARIANT" = standard ] && add_wifi_patches
 board_tree
