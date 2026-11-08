@@ -60,4 +60,7 @@ make defconfig
 add_config
 board_config
 
+# Ensure the active build configuration disables MHI debug after all config merges.
+sed -i 's/^CONFIG_MHI_BUS_DEBUG=y$/# CONFIG_MHI_BUS_DEBUG is not set/' .config
+
 bash ../mtk-openwrt-feeds/autobuild/unified/autobuild.sh "$PROFILE" build
