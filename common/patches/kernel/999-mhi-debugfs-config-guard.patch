@@ -7,7 +7,7 @@ stubs if the downstream build still compiles debugfs.c.
 
 --- a/drivers/bus/mhi/host/debugfs.c
 +++ b/drivers/bus/mhi/host/debugfs.c
-@@ -3,6 +3,8 @@
+@@ -3,7 +3,9 @@
   * Copyright (c) 2020, The Linux Foundation. All rights reserved.
   *
   */
@@ -17,7 +17,7 @@ stubs if the downstream build still compiles debugfs.c.
  #include <linux/debugfs.h>
  #include <linux/device.h>
  #include <linux/interrupt.h>
-@@ -411,3 +413,5 @@ void mhi_debugfs_exit(void)
+@@ -410,4 +412,6 @@ void mhi_debugfs_exit(void)
  {
  	debugfs_remove_recursive(mhi_debugfs_root);
  }
