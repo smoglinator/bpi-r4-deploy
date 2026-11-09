@@ -6,6 +6,13 @@
 name: Build BPI-R4 Deploy
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'common/patches/kernel/**'
+      - 'build.sh'
+      - '.github/workflows/build-bpi-r4-deploy.yml'
   workflow_dispatch:
     inputs:
       variant:
@@ -58,7 +65,7 @@ jobs:
 
       - name: Set build variables
         run: |
-          VARIANT="${{ github.event.inputs.variant }}"
+          VARIANT="${{ github.event.inputs.variant || 'standard' }}"
 
           if [ "$VARIANT" = "wired" ]; then
             echo "RELEASE_TAGS=release-4gb-wired release-4gb-poe-wired release-8gb-wired release-8gb-poe-wired release-8gb-wired-unifi release-8gb-poe-wired-unifi" >> $GITHUB_ENV
@@ -96,11 +103,32 @@ jobs:
           find openwrt/ -name "config-*" -exec sed -i 's/CONFIG_MHI_BUS_DEBUG=y/# CONFIG_MHI_BUS_DEBUG is not set/g' {} + || true
 
       - name: Build
-        run: ./build.sh bpi-r4 "${{ github.event.inputs.variant }}"
+        shell: bash
+        run: |
+          set +e
+          set -o pipefail
+          ./build.sh bpi-r4 "${{ github.event.inputs.variant || 'standard' }}" 2>&1 | tee build.log | grep --line-buffered -E '(^make(\\[[0-9]+\\])?: (Entering|Leaving) directory|error:|fatal error:|undefined reference|No space left|redefinition of|Error [0-9]+|make.*\\*\\*\\*|FAIL:|ERROR:)'
+          build_status=${PIPESTATUS[0]}
+          if [ "$build_status" -ne 0 ]; then
+            echo "===== BUILD ERROR SUMMARY ====="
+            grep -niE 'error:|fatal error:|undefined reference|No space left|redefinition of|Error [0-9]+|make.*\\*\\*\\*|FAIL:|ERROR:' build.log | tail -n 100 || true
+            echo "===== LAST 80 LOG LINES ====="
+            tail -n 80 build.log
+          fi
+          exit "$build_status"
+
+      - name: Upload build log when build fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ github.run_number }}
+          path: build.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Prepare release artifacts
         run: |
-          VARIANT="${{ github.event.inputs.variant }}"
+          VARIANT="${{ github.event.inputs.variant || 'standard' }}"
           FILOGIC="openwrt/bin/targets/mediatek/filogic"
 
           # Prepare artifact directory for one release tag
