@@ -1,0 +1,25 @@
+From: BPI-R4 build fix
+Subject: [PATCH] bus: mhi: guard debugfs definitions with config
+
+When CONFIG_MHI_BUS_DEBUG is disabled, internal.h provides static inline
+stubs. Guard the implementation as well so it cannot collide with those
+stubs if the downstream build still compiles debugfs.c.
+
+--- a/drivers/bus/mhi/host/debugfs.c
++++ b/drivers/bus/mhi/host/debugfs.c
+@@ -3,6 +3,8 @@
+  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+  *
+  */
+ 
++#ifdef CONFIG_MHI_BUS_DEBUG
++
+ #include <linux/debugfs.h>
+ #include <linux/device.h>
+ #include <linux/interrupt.h>
+@@ -411,3 +413,5 @@ void mhi_debugfs_exit(void)
+ {
+ 	debugfs_remove_recursive(mhi_debugfs_root);
+ }
++
++#endif /* CONFIG_MHI_BUS_DEBUG */
