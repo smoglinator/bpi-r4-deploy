@@ -44,6 +44,14 @@ find . -type f -name 'config-*' -exec sed -i \
     's/^CONFIG_MHI_BUS_DEBUG=y$/# CONFIG_MHI_BUS_DEBUG is not set/' {} + || true
 
 [ "$VARIANT" = standard ] && add_wifi_patches
+
+# The MHI debugfs implementation in the pinned mac80211 backports tree needs
+# the same CONFIG_MHI_BUS_DEBUG guard as the kernel-side patch. Apply it to
+# mac80211 for both standard and wired variants.
+mkdir -p package/kernel/mac80211/patches/subsys
+cp "$REPO/common/patches/wifi/mac80211/0001-mhi-debugfs-config-guard.patch" \
+    package/kernel/mac80211/patches/subsys/
+
 board_tree
 add_packages
 add_files
