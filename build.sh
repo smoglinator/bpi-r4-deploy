@@ -68,17 +68,17 @@ make defconfig
 add_config
 board_config
 
-# Patch the extracted mac80211 backports source directly. Its patch directory
-# was not applying our earlier guard patch, so enforce the guard in Build/Prepare.
+# Guard the MHI debugfs implementation immediately before module compilation.
+# Build/Prepare injection did not affect the source used by the compile step.
 python3 - <<'PY'
 p = "package/kernel/mac80211/Makefile"
 s = open(p).read()
-needle = "\t$(Build/Patch)\n"
-replacement = needle + "\t { printf '%s\\n' '#ifdef CONFIG_MHI_BUS_DEBUG'; cat $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; printf '%s\\n' '#endif /* CONFIG_MHI_BUS_DEBUG */'; } > $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp && mv $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c\n"
-if "CONFIG_MHI_BUS_DEBUG */" not in s:
+needle = "\t+$(MAKE) $(PKG_JOBS) $(MAKE_OPTS) modules\n"
+command = "\tif ! grep -q '^#ifdef CONFIG_MHI_BUS_DEBUG$' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then { printf '%s\\n' '#ifdef CONFIG_MHI_BUS_DEBUG'; cat $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; printf '%s\\n' '#endif /* CONFIG_MHI_BUS_DEBUG */'; } > $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp && mv $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; fi\n"
+if "Guard the MHI debugfs implementation immediately before module compilation." not in s:
     if needle not in s:
-        raise SystemExit("Could not find mac80211 Build/Patch hook")
-    s = s.replace(needle, replacement, 1)
+        raise SystemExit("Could not find mac80211 module compile hook")
+    s = s.replace(needle, command + needle, 1)
     open(p, "w").write(s)
 PY
 
