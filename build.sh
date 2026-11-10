@@ -69,12 +69,12 @@ add_config
 board_config
 
 # Guard the MHI debugfs implementation immediately before module compilation.
-# Build/Prepare injection did not affect the source used by the compile step.
+# Escape # for GNU make: unescaped hashes are parsed as Makefile comments.
 python3 - <<'PY'
 p = "package/kernel/mac80211/Makefile"
 s = open(p).read()
 needle = "\t+$(MAKE) $(PKG_JOBS) $(MAKE_OPTS) modules\n"
-command = "\tif ! grep -q '^#ifdef CONFIG_MHI_BUS_DEBUG$' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then { printf '%s\\n' '#ifdef CONFIG_MHI_BUS_DEBUG'; cat $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; printf '%s\\n' '#endif /* CONFIG_MHI_BUS_DEBUG */'; } > $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp && mv $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; fi\n"
+command = "\tif ! grep -q 'CONFIG_MHI_BUS_DEBUG' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then { printf '%s\\n' '\\#ifdef CONFIG_MHI_BUS_DEBUG'; cat $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; printf '%s\\n' '\\#endif /* CONFIG_MHI_BUS_DEBUG */'; } > $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp && mv $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; fi\n"
 if "Guard the MHI debugfs implementation immediately before module compilation." not in s:
     if needle not in s:
         raise SystemExit("Could not find mac80211 module compile hook")
