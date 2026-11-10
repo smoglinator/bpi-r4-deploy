@@ -68,6 +68,20 @@ make defconfig
 add_config
 board_config
 
+# Patch the extracted mac80211 backports source during Build/Prepare.
+# The distro's autobuild flow does not apply our package patch directory reliably.
+python3 - <<'PY'
+p = "package/kernel/mac80211/Makefile"
+s = open(p).read()
+needle = "\t$(Build/Patch)\n"
+command = "\t@if ! grep -q '^#ifdef CONFIG_MHI_BUS_DEBUG$' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then { printf '%s\\n' '\\#ifdef CONFIG_MHI_BUS_DEBUG'; cat $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; printf '%s\\n' '\\#endif /* CONFIG_MHI_BUS_DEBUG */'; } > $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp && mv $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; fi\n"
+if "Patch the extracted mac80211 backports source during Build/Prepare." not in s:
+    if needle not in s:
+        raise SystemExit("Could not find Build/Patch in mac80211 Makefile")
+    s = s.replace(needle, needle + command, 1)
+    open(p, "w").write(s)
+PY
+
 # Ensure the active build configuration disables MHI debug after all config merges.
 sed -i 's/^CONFIG_MHI_BUS_DEBUG=y$/# CONFIG_MHI_BUS_DEBUG is not set/' .config
 
