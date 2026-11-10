@@ -36,6 +36,12 @@ fetch_sources
 add_kernel_patches
 
 cd openwrt
+
+# Install the MHI guard patch BEFORE autobuild prepare unpacks/patches mac80211.
+mkdir -p package/kernel/mac80211/patches/subsys
+cp "$REPO/common/patches/wifi/mac80211/0001-mhi-debugfs-config-guard.patch" \
+    package/kernel/mac80211/patches/subsys/
+
 bash ../mtk-openwrt-feeds/autobuild/unified/autobuild.sh "$PROFILE" prepare
 
 # Apply this after fetching and preparing sources: the earlier workflow step
@@ -45,12 +51,6 @@ find . -type f -name 'config-*' -exec sed -i \
 
 [ "$VARIANT" = standard ] && add_wifi_patches
 
-# The MHI debugfs implementation in the pinned mac80211 backports tree needs
-# the same CONFIG_MHI_BUS_DEBUG guard as the kernel-side patch. Apply it to
-# mac80211 for both standard and wired variants.
-mkdir -p package/kernel/mac80211/patches/subsys
-cp "$REPO/common/patches/wifi/mac80211/0001-mhi-debugfs-config-guard.patch" \
-    package/kernel/mac80211/patches/subsys/
 
 board_tree
 add_packages
@@ -67,20 +67,6 @@ add_after_feeds
 make defconfig
 add_config
 board_config
-
-# Guard the MHI debugfs implementation immediately before module compilation.
-# Escape # for GNU make: unescaped hashes are parsed as Makefile comments.
-python3 - <<'PY'
-p = "package/kernel/mac80211/Makefile"
-s = open(p).read()
-needle = "\t+$(MAKE) $(PKG_JOBS) $(MAKE_OPTS) modules\n"
-command = "\tif ! grep -q 'CONFIG_MHI_BUS_DEBUG' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then { printf '%s\\n' '\\#ifdef CONFIG_MHI_BUS_DEBUG'; cat $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; printf '%s\\n' '\\#endif /* CONFIG_MHI_BUS_DEBUG */'; } > $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp && mv $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; fi\n"
-if "Guard the MHI debugfs implementation immediately before module compilation." not in s:
-    if needle not in s:
-        raise SystemExit("Could not find mac80211 module compile hook")
-    s = s.replace(needle, command + needle, 1)
-    open(p, "w").write(s)
-PY
 
 # Ensure the active build configuration disables MHI debug after all config merges.
 sed -i 's/^CONFIG_MHI_BUS_DEBUG=y$/# CONFIG_MHI_BUS_DEBUG is not set/' .config
