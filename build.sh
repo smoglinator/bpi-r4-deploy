@@ -68,6 +68,20 @@ make defconfig
 add_config
 board_config
 
+# Patch the extracted mac80211 backports source directly. Its patch directory
+# was not applying our earlier guard patch, so enforce the guard in Build/Prepare.
+python3 - <<'PY'
+p = "package/kernel/mac80211/Makefile"
+s = open(p).read()
+needle = "\t$(Build/Patch)\n"
+replacement = needle + "\t sed -i '1i\\\\#ifdef CONFIG_MHI_BUS_DEBUG' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c\n\t echo '#endif /* CONFIG_MHI_BUS_DEBUG */' >> $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c\n"
+if "CONFIG_MHI_BUS_DEBUG */" not in s:
+    if needle not in s:
+        raise SystemExit("Could not find mac80211 Build/Patch hook")
+    s = s.replace(needle, replacement, 1)
+    open(p, "w").write(s)
+PY
+
 # Ensure the active build configuration disables MHI debug after all config merges.
 sed -i 's/^CONFIG_MHI_BUS_DEBUG=y$/# CONFIG_MHI_BUS_DEBUG is not set/' .config
 
