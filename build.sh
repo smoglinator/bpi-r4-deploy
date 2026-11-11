@@ -60,14 +60,15 @@ board_after_feeds
 add_after_feeds
 
 # Feed installation can replace package/kernel/mac80211 after autobuild prepare.
-# Install the MHI guard only after all feed mutations, immediately before config
-# generation/build, so the package's patch series actually sees it.
-mkdir -p package/kernel/mac80211/patches/subsys
+# OpenWrt's mac80211 Build/Patch applies the package's top-level patches directory;
+# placing this under patches/subsys is not picked up by this pinned package Makefile.
+# Install at the top level, with a late sort order, after all feed mutations.
+mkdir -p package/kernel/mac80211/patches
 cp "$REPO/common/patches/wifi/mac80211/0001-mhi-debugfs-config-guard.patch" \
-    package/kernel/mac80211/patches/subsys/
-test -s package/kernel/mac80211/patches/subsys/0001-mhi-debugfs-config-guard.patch
-grep -q 'CONFIG_MHI_BUS_DEBUG' package/kernel/mac80211/patches/subsys/0001-mhi-debugfs-config-guard.patch
-echo "Verified MHI guard patch installed after feed installation"
+    package/kernel/mac80211/patches/9999-mhi-debugfs-config-guard.patch
+test -s package/kernel/mac80211/patches/9999-mhi-debugfs-config-guard.patch
+grep -q 'CONFIG_MHI_BUS_DEBUG' package/kernel/mac80211/patches/9999-mhi-debugfs-config-guard.patch
+echo "Verified MHI guard patch installed in mac80211 top-level patch series"
 
 \cp "$REPO/boards/$BOARD/configs/$VARIANT.config" .config
 make defconfig
