@@ -74,7 +74,7 @@ python3 - <<'PY'
 p = "package/kernel/mac80211/Makefile"
 s = open(p).read()
 needle = "\t$(Build/Patch)\n"
-command = "\t@if ! grep -q 'ifdef CONFIG_MHI_BUS_DEBUG' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then { printf '\\043ifdef CONFIG_MHI_BUS_DEBUG\\n'; cat $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; printf '\\043endif /* CONFIG_MHI_BUS_DEBUG */\\n'; } > $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp && mv $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; fi\n"
+command = "\t@if ! grep -q 'MHI_DEBUGFS_CONFIG_GUARD_BEGIN' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then { printf '\\043ifdef CONFIG_MHI_BUS_DEBUG\\n\\043define MHI_DEBUGFS_CONFIG_GUARD_BEGIN 1\\n'; cat $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; printf '\\043endif /* CONFIG_MHI_BUS_DEBUG */\\n'; } > $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp && mv $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; fi\n"
 if "Patch the extracted mac80211 backports source during Build/Prepare." not in s:
     if needle not in s:
         raise SystemExit("Could not find Build/Patch in mac80211 Makefile")
