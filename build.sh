@@ -66,16 +66,28 @@ python3 - <<'PY'
 from pathlib import Path
 p = Path("package/kernel/mac80211/Makefile")
 s = p.read_text()
-needle = "\t\$(Build/Patch)\n"
+start_marker = "define Build/Prepare\n"
+start = s.find(start_marker)
+if start < 0:
+    raise SystemExit("Could not find mac80211 Build/Prepare definition")
+end = s.find("\nendef", start)
+if end < 0:
+    raise SystemExit("Could not find end of mac80211 Build/Prepare definition")
+block = s[start:end]
+needle = "\t\\$(Build/Patch)\n"
 guard = """\t# Keep MHI debugfs implementation consistent with inline stubs in internal.h.
-\t@if ! grep -q '^#ifdef CONFIG_MHI_BUS_DEBUG$' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then \\\n\t\tsed -i '1i\\#ifdef CONFIG_MHI_BUS_DEBUG' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; \\\n\t\tprintf '\\n#endif /* CONFIG_MHI_BUS_DEBUG */\\n' >> $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; \\\n\tfi
+\t@if ! grep -q '^#ifdef CONFIG_MHI_BUS_DEBUG$' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then \\\
+\t\tsed -i '1i\\#ifdef CONFIG_MHI_BUS_DEBUG' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; \\\
+\t\tprintf '\\n#endif /* CONFIG_MHI_BUS_DEBUG */\\n' >> $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; \\\
+\tfi
 """
-if s.count(needle) != 1:
-    raise SystemExit("Expected exactly one Build/Patch recipe line in mac80211 Makefile")
-if "Keep MHI debugfs implementation consistent" not in s:
-    s = s.replace(needle, needle + guard)
+if "Keep MHI debugfs implementation consistent" not in block:
+    if block.count(needle) != 1:
+        raise SystemExit("Expected exactly one Build/Patch call inside Build/Prepare")
+    block = block.replace(needle, needle + guard, 1)
+    s = s[:start] + block + s[end:]
     p.write_text(s)
-print("Verified MHI guard is installed by mac80211 Build/Prepare")
+print("Verified MHI guard is installed inside mac80211 Build/Prepare")
 PY
 grep -q 'Keep MHI debugfs implementation consistent' package/kernel/mac80211/Makefile
 
