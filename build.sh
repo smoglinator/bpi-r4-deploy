@@ -68,18 +68,29 @@ make defconfig
 add_config
 board_config
 
-# Patch the extracted mac80211 backports source during Build/Prepare.
-# The distro's autobuild flow does not apply our package patch directory reliably.
+# Patch the actual extracted source immediately before the build. Do not rely
+# on Build/Prepare hooks: autobuild may reuse an existing prepared stamp.
 python3 - <<'PY'
-p = "package/kernel/mac80211/Makefile"
-s = open(p).read()
-needle = "\t$(Build/Patch)\n"
-command = "\t@if ! grep -q 'MHI_DEBUGFS_CONFIG_GUARD_BEGIN' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then { printf '\\043ifdef CONFIG_MHI_BUS_DEBUG\\n\\043define MHI_DEBUGFS_CONFIG_GUARD_BEGIN 1\\n'; cat $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; printf '\\043endif /* CONFIG_MHI_BUS_DEBUG */\\n'; } > $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp && mv $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c.tmp $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; fi\n"
-if "Patch the extracted mac80211 backports source during Build/Prepare." not in s:
-    if needle not in s:
-        raise SystemExit("Could not find Build/Patch in mac80211 Makefile")
-    s = s.replace(needle, needle + command, 1)
-    open(p, "w").write(s)
+from pathlib import Path
+import sys
+
+root = Path("build_dir")
+matches = list(root.glob("target-*/linux-mediatek_filogic/mac80211-regular/backports*/drivers/bus/mhi/host/debugfs.c"))
+if not matches:
+    matches = list(root.glob("**/mac80211-regular/backports*/drivers/bus/mhi/host/debugfs.c"))
+if not matches:
+    sys.exit("ERROR: MHI debugfs.c not found after autobuild prepare; refusing to launch a full build.")
+
+for p in matches:
+    s = p.read_text()
+    if "MHI_DEBUGFS_CONFIG_GUARD_BEGIN" in s:
+        print(f"MHI guard already present: {p}")
+        continue
+    p.write_text("#ifdef CONFIG_MHI_BUS_DEBUG\n#define MHI_DEBUGFS_CONFIG_GUARD_BEGIN 1\n" + s + "\n#endif /* CONFIG_MHI_BUS_DEBUG */\n")
+    check = p.read_text()
+    if not check.startswith("#ifdef CONFIG_MHI_BUS_DEBUG\n#define MHI_DEBUGFS_CONFIG_GUARD_BEGIN 1"):
+        sys.exit(f"ERROR: MHI guard verification failed: {p}")
+    print(f"Applied and verified MHI guard: {p}")
 PY
 
 # Ensure the active build configuration disables MHI debug after all config merges.
