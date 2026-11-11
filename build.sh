@@ -59,16 +59,25 @@ board_packages
 board_after_feeds
 add_after_feeds
 
-# Feed installation can replace package/kernel/mac80211 after autobuild prepare.
-# OpenWrt's mac80211 Build/Patch applies the package's top-level patches directory;
-# placing this under patches/subsys is not picked up by this pinned package Makefile.
-# Install at the top level, with a late sort order, after all feed mutations.
-mkdir -p package/kernel/mac80211/patches
-cp "$REPO/common/patches/wifi/mac80211/0001-mhi-debugfs-config-guard.patch" \
-    package/kernel/mac80211/patches/9999-mhi-debugfs-config-guard.patch
-test -s package/kernel/mac80211/patches/9999-mhi-debugfs-config-guard.patch
-grep -q 'CONFIG_MHI_BUS_DEBUG' package/kernel/mac80211/patches/9999-mhi-debugfs-config-guard.patch
-echo "Verified MHI guard patch installed in mac80211 top-level patch series"
+# Patch the actual mac80211 preparation recipe. Feed/autobuild stages can
+# replace package patch directories, so make the guard part of Build/Prepare
+# itself, after upstream patches are applied and before compilation begins.
+python3 - <<'PY'
+from pathlib import Path
+p = Path("package/kernel/mac80211/Makefile")
+s = p.read_text()
+needle = "\t\$(Build/Patch)\n"
+guard = """\t# Keep MHI debugfs implementation consistent with inline stubs in internal.h.
+\t@if ! grep -q '^#ifdef CONFIG_MHI_BUS_DEBUG$' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then \\\n\t\tsed -i '1i\\#ifdef CONFIG_MHI_BUS_DEBUG' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; \\\n\t\tprintf '\\n#endif /* CONFIG_MHI_BUS_DEBUG */\\n' >> $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; \\\n\tfi
+"""
+if s.count(needle) != 1:
+    raise SystemExit("Expected exactly one Build/Patch recipe line in mac80211 Makefile")
+if "Keep MHI debugfs implementation consistent" not in s:
+    s = s.replace(needle, needle + guard)
+    p.write_text(s)
+print("Verified MHI guard is installed by mac80211 Build/Prepare")
+PY
+grep -q 'Keep MHI debugfs implementation consistent' package/kernel/mac80211/Makefile
 
 \cp "$REPO/boards/$BOARD/configs/$VARIANT.config" .config
 make defconfig
