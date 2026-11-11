@@ -48,14 +48,6 @@ find . -type f -name 'config-*' -exec sed -i \
 
 [ "$VARIANT" = standard ] && add_wifi_patches
 
-# Install the MHI guard after autobuild prepare/feed setup, which may replace
-# package directories. It must be present before make starts preparing mac80211.
-mkdir -p package/kernel/mac80211/patches/subsys
-cp "$REPO/common/patches/wifi/mac80211/0001-mhi-debugfs-config-guard.patch" \
-    package/kernel/mac80211/patches/subsys/
-test -s package/kernel/mac80211/patches/subsys/0001-mhi-debugfs-config-guard.patch
-echo "Verified MHI guard patch installed in mac80211 patch series"
-
 board_tree
 add_packages
 add_files
@@ -66,6 +58,16 @@ board_packages
 
 board_after_feeds
 add_after_feeds
+
+# Feed installation can replace package/kernel/mac80211 after autobuild prepare.
+# Install the MHI guard only after all feed mutations, immediately before config
+# generation/build, so the package's patch series actually sees it.
+mkdir -p package/kernel/mac80211/patches/subsys
+cp "$REPO/common/patches/wifi/mac80211/0001-mhi-debugfs-config-guard.patch" \
+    package/kernel/mac80211/patches/subsys/
+test -s package/kernel/mac80211/patches/subsys/0001-mhi-debugfs-config-guard.patch
+grep -q 'CONFIG_MHI_BUS_DEBUG' package/kernel/mac80211/patches/subsys/0001-mhi-debugfs-config-guard.patch
+echo "Verified MHI guard patch installed after feed installation"
 
 \cp "$REPO/boards/$BOARD/configs/$VARIANT.config" .config
 make defconfig
