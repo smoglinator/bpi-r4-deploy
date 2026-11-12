@@ -76,9 +76,9 @@ if end < 0:
 block = s[start:end]
 needle = "\t$(Build/Patch)\n"
 guard = """\t# Keep MHI debugfs implementation consistent with inline stubs in internal.h.
-\t@if ! grep -q '^#ifdef CONFIG_MHI_BUS_DEBUG$' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then \\\
-\t\tsed -i '1i\\#ifdef CONFIG_MHI_BUS_DEBUG' $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; \\\
-\t\tprintf '\\n#endif /* CONFIG_MHI_BUS_DEBUG */\\n' >> $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; \\\
+\t@if ! grep -q "^#ifdef CONFIG_MHI_BUS_DEBUG$$" $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; then \\\
+\t\tsed -i "1i\\\\#ifdef CONFIG_MHI_BUS_DEBUG" $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; \\\
+\t\tprintf "\\n#endif /* CONFIG_MHI_BUS_DEBUG */\\n" >> $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; \\\
 \tfi
 """
 if "Keep MHI debugfs implementation consistent" not in block:
