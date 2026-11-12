@@ -76,7 +76,7 @@ if end < 0:
 block = s[start:end]
 needle = "\t$(Build/Patch)\n"
 guard = """\t# Keep MHI debugfs implementation consistent with inline stubs in internal.h.
-\t@sed -i "1i\\\\#ifdef CONFIG_MHI_BUS_DEBUG" $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c; echo "#endif" >> $(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c
+\t@python3 -c 'from pathlib import Path; p=Path("$(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c"); s=p.read_text(); p.write_text(s if s.startswith("#ifdef CONFIG_MHI_BUS_DEBUG\\n") else "#ifdef CONFIG_MHI_BUS_DEBUG\\n" + s + "\\n#endif /* CONFIG_MHI_BUS_DEBUG */\\n")'
 """
 if "Keep MHI debugfs implementation consistent" not in block:
     if block.count(needle) != 1:
