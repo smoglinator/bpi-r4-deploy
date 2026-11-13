@@ -44,7 +44,7 @@ bash ../mtk-openwrt-feeds/autobuild/unified/autobuild.sh "$PROFILE" prepare
 # Apply this after fetching and preparing sources: the earlier workflow step
 # ran before fetch_sources, which deletes and reclones the OpenWrt tree.
 find . -type f -name 'config-*' -exec sed -i \
-    's/^CONFIG_MHI_BUS_DEBUG=y$/# CONFIG_MHI_BUS_DEBUG is not set/' {} + || true
+    's/^CPTCFG_MHI_BUS_DEBUG=y$/# CPTCFG_MHI_BUS_DEBUG is not set/' {} + || true
 
 [ "$VARIANT" = standard ] && add_wifi_patches
 
@@ -76,7 +76,7 @@ if end < 0:
 block = s[start:end]
 needle = "\t$(Build/Patch)\n"
 guard = """	# Keep MHI debugfs implementation consistent with inline stubs in internal.h.
-	@python3 -c 'from pathlib import Path; root=Path("$(PKG_BUILD_DIR)"); p=root/"drivers/bus/mhi/host/debugfs.c"; assert p.is_file(), f"Expected MHI debugfs.c at {p}"; s=p.read_text(); nl=chr(10); p.write_text(s if s.startswith("#if defined(CONFIG_MHI_BUS_DEBUG) && CONFIG_MHI_BUS_DEBUG" + nl) else "#if defined(CONFIG_MHI_BUS_DEBUG) && CONFIG_MHI_BUS_DEBUG" + nl + s + nl + "#endif /* CONFIG_MHI_BUS_DEBUG */" + nl)'
+	@python3 -c 'from pathlib import Path; root=Path("$(PKG_BUILD_DIR)"); p=root/"drivers/bus/mhi/host/debugfs.c"; assert p.is_file(), f"Expected MHI debugfs.c at {p}"; s=p.read_text(); nl=chr(10); p.write_text(s if s.startswith("#if defined(CPTCFG_MHI_BUS_DEBUG) && CPTCFG_MHI_BUS_DEBUG" + nl) else "#if defined(CPTCFG_MHI_BUS_DEBUG) && CPTCFG_MHI_BUS_DEBUG" + nl + s + nl + "#endif /* CPTCFG_MHI_BUS_DEBUG */" + nl)'
 """
 # Replace any previously injected guard recipe, even if its text is stale.
 lines = block.splitlines(keepends=True)
@@ -106,6 +106,6 @@ add_config
 board_config
 
 # Keep the debug implementation out when the inline stubs are selected.
-sed -i 's/^CONFIG_MHI_BUS_DEBUG=y$/# CONFIG_MHI_BUS_DEBUG is not set/' .config
+sed -i 's/^CPTCFG_MHI_BUS_DEBUG=y$/# CPTCFG_MHI_BUS_DEBUG is not set/' .config
 
 bash ../mtk-openwrt-feeds/autobuild/unified/autobuild.sh "$PROFILE" build
