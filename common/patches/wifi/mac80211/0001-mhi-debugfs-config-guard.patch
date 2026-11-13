@@ -2,7 +2,7 @@ From: BPI-R4 build fix
 Subject: [PATCH] bus: mhi: guard debugfs definitions with config
 
 The mac80211 backports tree compiles drivers/bus/mhi/host/debugfs.c even
-when CONFIG_MHI_BUS_DEBUG is disabled. internal.h then provides static
+when CPTCFG_MHI_BUS_DEBUG is disabled. internal.h then provides static
 inline stubs, causing duplicate definitions. Guard the implementation.
 
 --- a/drivers/bus/mhi/host/debugfs.c
@@ -12,7 +12,7 @@ inline stubs, causing duplicate definitions. Guard the implementation.
   *
   */
  
-+#if defined(CONFIG_MHI_BUS_DEBUG) && CONFIG_MHI_BUS_DEBUG
++#if defined(CPTCFG_MHI_BUS_DEBUG) && CPTCFG_MHI_BUS_DEBUG
 +
  #include <linux/debugfs.h>
  #include <linux/device.h>
@@ -22,4 +22,4 @@ inline stubs, causing duplicate definitions. Guard the implementation.
  	debugfs_remove_recursive(mhi_debugfs_root);
  }
 +
-+#endif /* CONFIG_MHI_BUS_DEBUG */
++#endif /* CPTCFG_MHI_BUS_DEBUG */
