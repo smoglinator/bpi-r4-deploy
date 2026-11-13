@@ -78,13 +78,25 @@ needle = "\t$(Build/Patch)\n"
 guard = """	# Keep MHI debugfs implementation consistent with inline stubs in internal.h.
 	@python3 -c 'from pathlib import Path; root=Path("$(PKG_BUILD_DIR)"); p=root/"drivers/bus/mhi/host/debugfs.c"; assert p.is_file(), f"Expected MHI debugfs.c at {p}"; s=p.read_text(); nl=chr(10); p.write_text(s if s.startswith("#if defined(CONFIG_MHI_BUS_DEBUG) && CONFIG_MHI_BUS_DEBUG" + nl) else "#if defined(CONFIG_MHI_BUS_DEBUG) && CONFIG_MHI_BUS_DEBUG" + nl + s + nl + "#endif /* CONFIG_MHI_BUS_DEBUG */" + nl)'
 """
-if "Keep MHI debugfs implementation consistent" not in block:
-    if block.count(needle) != 1:
-        raise SystemExit("Expected exactly one Build/Patch call inside Build/Prepare")
-    block = block.replace(needle, needle + guard, 1)
-    s = s[:start] + block + s[end:]
-    p.write_text(s)
-print("Verified MHI guard is installed inside mac80211 Build/Prepare")
+# Replace any previously injected guard recipe, even if its text is stale.
+lines = block.splitlines(keepends=True)
+clean = []
+i = 0
+while i < len(lines):
+    if "Keep MHI debugfs implementation consistent" in lines[i]:
+        i += 1
+        if i < len(lines) and "@python3 -c" in lines[i]:
+            i += 1
+        continue
+    clean.append(lines[i])
+    i += 1
+block = "".join(clean)
+if block.count(needle) != 1:
+    raise SystemExit("Expected exactly one Build/Patch call inside Build/Prepare")
+block = block.replace(needle, needle + guard, 1)
+s = s[:start] + block + s[end:]
+p.write_text(s)
+print("Replaced MHI guard recipe inside mac80211 Build/Prepare")
 PY
 grep -q 'Keep MHI debugfs implementation consistent' package/kernel/mac80211/Makefile
 
