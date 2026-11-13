@@ -12,7 +12,7 @@ inline stubs, causing duplicate definitions. Guard the implementation.
   *
   */
  
-+#ifdef CONFIG_MHI_BUS_DEBUG
++#if defined(CONFIG_MHI_BUS_DEBUG) && CONFIG_MHI_BUS_DEBUG
 +
  #include <linux/debugfs.h>
  #include <linux/device.h>
