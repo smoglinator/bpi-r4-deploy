@@ -76,7 +76,7 @@ if end < 0:
 block = s[start:end]
 needle = "\t$(Build/Patch)\n"
 guard = """	# Keep MHI debugfs implementation consistent with inline stubs in internal.h.
-	@python3 -c 'from pathlib import Path; p=Path("$(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c"); s=p.read_text(); nl=chr(10); p.write_text(s if s.startswith("#ifdef CONFIG_MHI_BUS_DEBUG" + nl) else "#ifdef CONFIG_MHI_BUS_DEBUG" + nl + s + nl + "#endif /* CONFIG_MHI_BUS_DEBUG */" + nl)'
+	@python3 -c 'from pathlib import Path; p=Path("$(PKG_BUILD_DIR)/drivers/bus/mhi/host/debugfs.c"); s=p.read_text(); nl=chr(10); p.write_text(s if s.startswith("#if defined(CONFIG_MHI_BUS_DEBUG) && CONFIG_MHI_BUS_DEBUG" + nl) else "#if defined(CONFIG_MHI_BUS_DEBUG) && CONFIG_MHI_BUS_DEBUG" + nl + s + nl + "#endif /* CONFIG_MHI_BUS_DEBUG */" + nl)'
 """
 if "Keep MHI debugfs implementation consistent" not in block:
     if block.count(needle) != 1:
