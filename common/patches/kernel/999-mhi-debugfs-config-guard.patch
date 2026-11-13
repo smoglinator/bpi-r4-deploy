@@ -12,7 +12,7 @@ stubs if the downstream build still compiles debugfs.c.
   *
   */
  
-+#ifdef CONFIG_MHI_BUS_DEBUG
++#if defined(CONFIG_MHI_BUS_DEBUG) && CONFIG_MHI_BUS_DEBUG
 +
  #include <linux/debugfs.h>
  #include <linux/device.h>
