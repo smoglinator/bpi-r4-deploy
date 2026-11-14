@@ -1,7 +1,7 @@
 From: BPI-R4 build fix
 Subject: [PATCH] bus: mhi: guard debugfs definitions with config
 
-When CPTCFG_MHI_BUS_DEBUG is disabled, internal.h provides static inline
+When CONFIG_MHI_BUS_DEBUG is disabled, internal.h provides static inline
 stubs. Guard the implementation as well so it cannot collide with those
 stubs if the downstream build still compiles debugfs.c.
 
@@ -12,7 +12,7 @@ stubs if the downstream build still compiles debugfs.c.
   *
   */
  
-+#if defined(CPTCFG_MHI_BUS_DEBUG) && CPTCFG_MHI_BUS_DEBUG
++#if defined(CONFIG_MHI_BUS_DEBUG) && CONFIG_MHI_BUS_DEBUG
 +
  #include <linux/debugfs.h>
  #include <linux/device.h>
@@ -22,4 +22,4 @@ stubs if the downstream build still compiles debugfs.c.
  	debugfs_remove_recursive(mhi_debugfs_root);
  }
 +
-+#endif /* CPTCFG_MHI_BUS_DEBUG */
++#endif /* CONFIG_MHI_BUS_DEBUG */
