@@ -192,3 +192,16 @@ jobs:
             "openwrt-mediatek-filogic-bananapi_bpi-r4-poe-nand-8gb-snand-img.bin"
 
           # The wired build also feeds
+
+      
+      - name: Upload firmware images
+        uses: actions/upload-artifact@v4
+        with:
+          name: bpi-r4-firmware-${{ github.run_number }}
+          path: |
+            rel-4gb/
+            rel-4gb-poe/
+            rel-8gb/
+            rel-8gb-poe/
+          if-no-files-found: error
+          retention-days: 14
