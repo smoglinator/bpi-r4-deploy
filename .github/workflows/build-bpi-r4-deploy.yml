@@ -12,6 +12,7 @@ on:
     paths:
       - 'common/patches/kernel/**'
       - 'build.sh'
+      - 'boards/bpi-r4/configs/**'
       - '.github/workflows/build-bpi-r4-deploy.yml'
   workflow_dispatch:
     inputs:
